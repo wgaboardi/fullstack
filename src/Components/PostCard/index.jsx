@@ -1,5 +1,6 @@
 //export const PostCard = (props) => {
 //destructuring {post} ao inves de props.post
+import './styles.css'
 export const PostCard = ({ post }) => {
   //const { post } = props;
   return (

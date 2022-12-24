@@ -4,6 +4,8 @@ import { Component } from 'react';
 //import { PostCard } from './Components/PostCard';
 import { loadPosts } from '../../utils/load-posts';
 import { Posts } from '../../Components/Posts';
+import { Button } from '../../Components/Button';
+import { TextInput } from '../../Components/TextInput';
 class Home extends Component {
   // com construtor
   /*constructor(props) {
@@ -19,6 +21,10 @@ class Home extends Component {
   //sem construtor - class fields
   state = {
     posts: [],
+    allPosts: [],
+    page: 0,
+    postsPerPage: 53,
+    searchValue: ''
   }
   timeoutUpdate = null;
 
@@ -27,8 +33,9 @@ class Home extends Component {
   loadPosts2 = async () => {
     const postsAndPhotos = await loadPosts();
     this.setState({ posts: postsAndPhotos });
-
   }
+
+
 
   // apos montar componente
   /*
@@ -42,9 +49,27 @@ class Home extends Component {
   // refactoring
   async componentDidMount() {
     const postsAndPhotos = await loadPosts();
-    this.setState({ posts: postsAndPhotos });
+    const { page, postsPerPage } = this.state;
+    this.setState({
+      posts: postsAndPhotos.slice(page, postsPerPage),
+      allPosts: postsAndPhotos
+    });
   }
 
+  loadMorePosts = () => {
+    const {
+      page,
+      postsPerPage,
+      allPosts,
+      posts
+    } = this.state;
+    const nextPage = page + postsPerPage;
+    const nextPosts = allPosts.slice(nextPage, nextPage + postsPerPage);
+    //spread
+    posts.push(...nextPosts);
+    this.setState({ posts, page: nextPage });
+    console.log(posts);
+  }
 
   // usado quando o componente for atualizado (acaba entrando em bug)
   componentDidUpdate() {
@@ -57,12 +82,41 @@ class Home extends Component {
     clearTimeout(this.timeoutUpdate);
   }
 
+  handleChanged = (e) => {
+    const { value } = e.target;
+    this.setState({ searchValue: value });
+  }
+
   render() {
-    const { posts } = this.state;
+    const { posts, page, postsPerPage, allPosts, searchValue } = this.state;
+    const noMorePosts = page + postsPerPage >= allPosts.length;
+
+    const filteredPosts = !!searchValue ? allPosts.filter((post) => post.title.toLowerCase().includes(searchValue.toLowerCase())) : posts;
+    //const filteredPosts = !!searchValue ? posts.filter((post) => {return post.title.toLowerCase().includes(searchValue.toLowerCase())}) : posts;
     //return (<p onClick={() => console.log('oi')}> Hi {name} from {city}</p>) // => arrow function
+    //short-circuit !!searchvalue
+
     return (
       <section className="container">
-        <Posts posts={posts} />
+        <div className="search-container">
+          {!!searchValue && (
+            <h1>Search value: {searchValue}</h1>
+          )
+          }
+          <TextInput searchValue={searchValue} handleChanged={this.handleChanged} />
+        </div>
+        {filteredPosts.length > 0 && (
+          <Posts posts={filteredPosts} />
+        )}
+        {filteredPosts.length === 0 && (
+          <p>Not found posts</p>
+        )}
+        {!searchValue && (
+          <Button
+            disabled={noMorePosts}
+            text="Load more posts..." onClick={this.loadMorePosts} />
+        )
+        }
       </section>
     ) // => arrow function
   }
